@@ -13,11 +13,11 @@ fn main() {
     }
 
     let re = Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)").expect("failed to compile regex");
-    let mut sum: i128 = 0;
+    let mut sum: u128 = 0;
 
     for (_, [num1, num2]) in re.captures_iter(&text).map(|c| c.extract()) {
-        let n1: i128 = num1.parse().expect("failed to parse number");
-        let n2: i128 = num2.parse().expect("failed to parse number");
+        let n1: u128 = num1.parse().expect("failed to parse number");
+        let n2: u128 = num2.parse().expect("failed to parse number");
 
         sum += n1 * n2;
     }
