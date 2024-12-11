@@ -26,18 +26,18 @@ fn main() {
     let dependency_graph = get_dependency_graph(rules);
 
     for update in &updates {
-        let parts: Vec<u8> = update
+        let pages: Vec<u8> = update
             .split(",")
             .map(|x| x.parse::<u8>().expect("failed to parse update num"))
             .collect();
 
-        let relative_dependency_graph = get_relative_dependency_graph(&parts, &dependency_graph);
+        let relative_dependency_graph = get_relative_dependency_graph(&pages, &dependency_graph);
 
-        if !is_update_valid(&parts, &relative_dependency_graph) {
-            let sorted_parts = topological_sort(&parts, &relative_dependency_graph);
-            let sanity_check = is_update_valid(&sorted_parts, &relative_dependency_graph);
+        if !is_update_valid(&pages, &relative_dependency_graph) {
+            let sorted_pages = topological_sort(&pages, &relative_dependency_graph);
+            let sanity_check = is_update_valid(&sorted_pages, &relative_dependency_graph);
             assert!(sanity_check);
-            total += sorted_parts[sorted_parts.len() / 2] as u128;
+            total += sorted_pages[sorted_pages.len() / 2] as u128;
         }
     }
 
@@ -50,19 +50,19 @@ where P: AsRef<Path>, {
     Ok(io::BufReader::new(file).lines())
 }
 
-fn is_update_valid(parts: &[u8], dependency_graph: &HashMap<u8, HashSet<u8>>) -> bool {
-    let index_map = parts.iter().enumerate().map(|(i, &x)| (x, i)).collect::<HashMap<_, _>>();
+fn is_update_valid(pages: &[u8], dependency_graph: &HashMap<u8, HashSet<u8>>) -> bool {
+    let index_map = pages.iter().enumerate().map(|(i, &x)| (x, i)).collect::<HashMap<_, _>>();
 
     fn dfs(
         root: usize,
-        part: u8,
+        page: u8,
         index_map: &HashMap<u8, usize>,
         dependency_graph: &HashMap<u8, HashSet<u8>>,
         visited: &mut HashSet<u8>,
     ) -> bool {
-        visited.insert(part);
+        visited.insert(page);
 
-        if let Some(children) = dependency_graph.get(&part) {
+        if let Some(children) = dependency_graph.get(&page) {
             for &child in children {
                 if visited.contains(&child) {
                     continue;
@@ -83,10 +83,10 @@ fn is_update_valid(parts: &[u8], dependency_graph: &HashMap<u8, HashSet<u8>>) ->
         return true;
     }
 
-    for (i, &part) in parts.iter().enumerate() {
+    for (i, &page) in pages.iter().enumerate() {
         let mut visited: HashSet<u8> = HashSet::new();
 
-        if dfs(i, part, &index_map, &dependency_graph, &mut visited) == false {
+        if dfs(i, page, &index_map, &dependency_graph, &mut visited) == false {
             return false;
         }
     }
@@ -98,11 +98,11 @@ fn get_dependency_graph(rules: Vec<String>) -> HashMap<u8, HashSet<u8>> {
     let mut dependency_graph: HashMap<u8, HashSet<u8>> = HashMap::new();
 
     for rule in rules {
-        let parts: Vec<&str> = rule.split("|").collect();
-        assert!(parts.len() == 2);
+        let pages: Vec<&str> = rule.split("|").collect();
+        assert!(pages.len() == 2);
 
-        let num1: u8 = parts[0].parse().expect("failed to parse num1");
-        let num2: u8 = parts[1].parse().expect("failed to parse num2");
+        let num1: u8 = pages[0].parse().expect("failed to parse num1");
+        let num2: u8 = pages[1].parse().expect("failed to parse num2");
 
         dependency_graph
             .entry(num1)
@@ -113,15 +113,15 @@ fn get_dependency_graph(rules: Vec<String>) -> HashMap<u8, HashSet<u8>> {
     dependency_graph
 }
 
-fn topological_sort(parts: &[u8], dependency_graph: &HashMap<u8, HashSet<u8>>) -> Vec<u8> {
-    let mut sorted_parts = Vec::new();
+fn topological_sort(pages: &[u8], dependency_graph: &HashMap<u8, HashSet<u8>>) -> Vec<u8> {
+    let mut sorted_pages = Vec::new();
     let mut visited = HashSet::new();
 
     fn dfs(
         node: u8,
         dependency_graph: &HashMap<u8, HashSet<u8>>,
         visited: &mut HashSet<u8>,
-        sorted_parts: &mut Vec<u8>,
+        sorted_pages: &mut Vec<u8>,
     ) {
         if visited.contains(&node) {
             return;
@@ -131,37 +131,36 @@ fn topological_sort(parts: &[u8], dependency_graph: &HashMap<u8, HashSet<u8>>) -
 
         if let Some(children) = dependency_graph.get(&node) {
             for &child in children {
-                dfs(child, dependency_graph, visited, sorted_parts);
+                dfs(child, dependency_graph, visited, sorted_pages);
             }
         }
 
-        sorted_parts.push(node);
+        sorted_pages.push(node);
     }
 
-    for &part in parts {
-        if !visited.contains(&part) {
-            dfs(part, dependency_graph, &mut visited, &mut sorted_parts);
+    for &page in pages {
+        if !visited.contains(&page) {
+            dfs(page, dependency_graph, &mut visited, &mut sorted_pages);
         }
     }
 
-    sorted_parts.reverse();
-    sorted_parts
+    sorted_pages.reverse();
+    sorted_pages
 }
 
-fn get_relative_dependency_graph(parts: &[u8], dependency_graph: &HashMap<u8, HashSet<u8>>) -> HashMap<u8, HashSet<u8>> {
-    let parts_set = parts.iter().cloned().collect::<HashSet<_>>();
+fn get_relative_dependency_graph(pages: &[u8], dependency_graph: &HashMap<u8, HashSet<u8>>) -> HashMap<u8, HashSet<u8>> {
+    let pages_set = pages.iter().cloned().collect::<HashSet<_>>();
     let mut relative_dependency_graph: HashMap<u8, HashSet<u8>> = HashMap::new();
 
-    for &part in parts {
-        if let Some(dependencies) = dependency_graph.get(&part) {
-            let filtered_dependencies: HashSet<u8> = dependencies
-                .iter()
-                .filter(|&&x| parts_set.contains(&x))
-                .cloned()
-                .collect();
+    for &page in pages {
+        let dependencies = dependency_graph.get(&page).expect("page does not exist in dependency graph");
+        let filtered_dependencies: HashSet<u8> = dependencies
+            .iter()
+            .filter(|&&x| pages_set.contains(&x))
+            .cloned()
+            .collect();
 
-            relative_dependency_graph.insert(part, filtered_dependencies);
-        }
+        relative_dependency_graph.insert(page, filtered_dependencies);
     }
 
     relative_dependency_graph
