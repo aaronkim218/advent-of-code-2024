@@ -70,19 +70,16 @@ fn find_free_space(blocks: &Vec<i16>, file_start: usize, size: usize) -> Option<
     let mut l: usize = 0;
 
     while l < file_start {
-        // find start of next free space
         while l < file_start && blocks[l] != -1 {
             l += 1;
         }
 
         let mut r = l + 1;
-        let mut curr_size: usize = 1;
         while r < file_start && blocks[r] == -1 {
-            curr_size += 1;
             r += 1;
         }
 
-        if curr_size >= size {
+        if r - l >= size {
             return Some(l);
         }
 
