@@ -44,7 +44,7 @@ fn dfs(map: &Vec<Vec<u32>>, (x, y): (usize, usize)) -> u32 {
     }
 
     if x < map[0].len() - 1 && map[y][x + 1] == curr + 1 {
-        total +=  dfs(map, (x + 1, y));
+        total += dfs(map, (x + 1, y));
     }
 
     if y > 0 && map[y - 1][x] == curr + 1 {
