@@ -14,8 +14,6 @@ fn main() {
         map.push(row);
     }
 
-    let start = std::time::Instant::now();
-
     let mut sum: u32 = 0;
     let mut visited: HashSet<(usize, usize)> = HashSet::new();
     for i in 0..map.len() {
@@ -33,9 +31,6 @@ fn main() {
             }
         }
     }
-
-    let elapsed = start.elapsed();
-    println!("Elapsed: {:?}", elapsed);
 
     println!("{}", sum);
 }
